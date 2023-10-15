@@ -56,6 +56,13 @@ button {
   transition: border-color 0.25s;
 }
 
+canvas {
+  box-sizing: border-box;
+  border: solid 3px black;
+  /* border: groove 1em rgb(134, 211, 134); */
+  border-radius: 50% 20% / 10% 40%;
+}
+
 button:hover {
   border-color: #646cff;
 }
