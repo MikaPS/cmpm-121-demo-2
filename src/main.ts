@@ -4,9 +4,14 @@ const app: HTMLDivElement = document.querySelector("#app")!;
 
 const gameName = "Sticker Sketchpad";
 
+// Defining magic numbers
+const begPoint = 0;
+const advance = 1;
+
 // Clear canvas
 function clearCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
+  mousePoints = [];
   isDrawing = false;
 }
 
@@ -33,25 +38,43 @@ if (ctx) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Drawing
-const mousePoints: number[][] = [];
+// Event + Drawing
+interface Point {
+  x: number;
+  y: number;
+}
+let mousePoints: Point[][] = [];
+let linePoints: Point[];
 let isDrawing = false;
+const drawLine = new Event("drawing-changed");
+canvas.addEventListener("drawing-changed", () => {
+  // Go thrugh all of the lines
+  for (const line of mousePoints) {
+    ctx.beginPath();
+    // Go through all the points in the line and connect them with a path
+    for (let i = begPoint; i < line.length; i += advance) {
+      const p: Point = line[i];
+      if (i == begPoint) {
+        ctx.moveTo(p.x, p.y);
+      }
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+});
 
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
-  mousePoints.push([e.offsetX, e.offsetY]);
   isDrawing = true;
+  linePoints = [];
+  mousePoints.push(linePoints);
+  linePoints.push({ x: e.offsetX, y: e.offsetY });
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
-    ctx.lineWidth = 0.5; // Sets line width
-    ctx.beginPath(); // Clear button doesn't work without using paths
-    const lastestMove = mousePoints[mousePoints.length - 1];
-    ctx.moveTo(lastestMove[0], lastestMove[1]); // Starts the drawing from the old x,y coords
-    ctx.lineTo(e.offsetX, e.offsetY); // Move to the new x,y coords
-    ctx.stroke(); // Actuall draws the line
-    mousePoints.push([e.offsetX, e.offsetY]);
+    linePoints.push({ x: e.offsetX, y: e.offsetY });
+    canvas.dispatchEvent(drawLine);
   }
 });
 
@@ -69,7 +92,9 @@ app.append(board);
 
 /*
 Credits:
-- In all steps, used the resources provided on the slides
+- In all steps, used the resources provided on the slides (including the code examples)
 - Explained how to use "as HTMLCanvasElement" to not have a problem with the possability of a null canvas
     https://kernhanda.github.io/tutorial-typescript-canvas-drawing/
-*/
+- Custom events:
+    - https://developer.mozilla.org/en-US/docs/Web/Events/Creating_and_triggerin
+    */
