@@ -34,14 +34,12 @@ if (ctx) {
 }
 
 // Drawing
-let oldX: number;
-let oldY: number;
+const mousePoints: number[][] = [];
 let isDrawing = false;
 
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
-  oldX = e.offsetX;
-  oldY = e.offsetY;
+  mousePoints.push([e.offsetX, e.offsetY]);
   isDrawing = true;
 });
 
@@ -49,11 +47,11 @@ canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
     ctx.lineWidth = 0.5; // Sets line width
     ctx.beginPath(); // Clear button doesn't work without using paths
-    ctx.moveTo(oldX, oldY); // Starts the drawing from the old x,y coords
+    const lastestMove = mousePoints[mousePoints.length - 1];
+    ctx.moveTo(lastestMove[0], lastestMove[1]); // Starts the drawing from the old x,y coords
     ctx.lineTo(e.offsetX, e.offsetY); // Move to the new x,y coords
     ctx.stroke(); // Actuall draws the line
-    oldX = e.offsetX; // Update coords
-    oldY = e.offsetY;
+    mousePoints.push([e.offsetX, e.offsetY]);
   }
 });
 
