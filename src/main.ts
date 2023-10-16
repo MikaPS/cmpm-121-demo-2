@@ -7,14 +7,6 @@ const gameName = "Sticker Sketchpad";
 // Defining magic numbers
 const begPoint = 0;
 
-// Clear canvas
-function clearCanvas() {
-  ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
-  undoList = [];
-  redoList = [];
-  isDrawing = false;
-}
-
 // Undo or Redo based on the values of l1 and l2
 function undoRedo(l1: Point[][], l2: Point[][]) {
   if (l1.length) {
@@ -34,7 +26,7 @@ const row2 = document.createElement("div");
 // Clear button
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "Clear";
-clearButton.addEventListener("click", () => clearCanvas(), false);
+clearButton.addEventListener("click", () => c.clearCanvas(), false);
 // Undo button
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "Undo";
@@ -48,20 +40,74 @@ redoButton.addEventListener("click", () => undoRedo(redoList, undoList), false);
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = 256;
 canvas.height = 256;
-const ctx = canvas.getContext("2d")!;
-if (ctx) {
-  ctx.fillStyle = "white";
-  ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
+
+// Hold all context elements in this class
+class Context {
+  ctx;
+  constructor(ctx: CanvasRenderingContext2D) {
+    this.ctx = ctx;
+  }
+
+  // Create a Canvas
+  startCanvas() {
+    this.ctx.fillStyle = "white";
+    this.ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
+  }
+
+  // Clear canvas
+  clearCanvas() {
+    this.ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
+    undoList = [];
+    redoList = [];
+    isDrawing = false;
+  }
+
+  // Change drawing
+  display() {
+    this.ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
+    // Go thrugh all of the lines
+    for (const line of undoList) {
+      this.ctx.beginPath();
+      // Go through all the points in the line and connect them with a path
+      const [firstPoint, ...otherPoints] = line;
+      const p: Point = firstPoint;
+      this.ctx.moveTo(p.x, p.y);
+      for (const p of otherPoints) {
+        this.ctx.lineTo(p.x, p.y);
+      }
+      this.ctx.stroke();
+    }
+  }
 }
 
-// Display Commands
-// function display(ctx: CanvasRenderingContext2D) {}
+// class Point {
+//   x;
+//   y;
+//   // currentLine;
+//   constructor(x: number = 0, y: number = 0) {
+//     this.x = x;
+//     this.y = y;
+//     // this.currentLine = [{ x, y }];
+//   }
+
+//   drag(x: number, y: number) {
+//     // this.currentLine.push({ x: x, y: y });
+//     this.x += x;
+//     this.y += y;
+//   }
+// }
+
+const c = new Context(canvas.getContext("2d")!);
+c.startCanvas();
 
 // Event + Drawing
 interface Point {
   x: number;
   y: number;
 }
+// let undoList: MarkerCommand[] = [];
+// let redoList: MarkerCommand[];
+// let currentLine: MarkerCommand[];
 let undoList: Point[][] = [];
 let redoList: Point[][] = [];
 let linePoints: Point[];
@@ -69,19 +115,7 @@ let isDrawing = false;
 
 // const drawLine = new Event("drawing-changed");
 canvas.addEventListener("drawing-changed", () => {
-  ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
-  // Go thrugh all of the lines
-  for (const line of undoList) {
-    ctx.beginPath();
-    // Go through all the points in the line and connect them with a path
-    const [firstPoint, ...otherPoints] = line;
-    const p: Point = firstPoint;
-    ctx.moveTo(p.x, p.y);
-    for (const p of otherPoints) {
-      ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-  }
+  c.display();
 });
 
 // Gets original coords and starts the drawing
