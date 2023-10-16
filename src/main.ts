@@ -6,20 +6,20 @@ const gameName = "Sticker Sketchpad";
 
 // Defining magic numbers
 const begPoint = 0;
-const advance = 1;
 
 // Clear canvas
 function clearCanvas() {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
   undoList = [];
+  redoList = [];
   isDrawing = false;
 }
 
 // Undo or Redo based on the values of l1 and l2
 function undoRedo(l1: Point[][], l2: Point[][]) {
-  if (l1.length > begPoint) {
+  if (l1.length) {
     l2.push(l1.pop()!);
-    canvas.dispatchEvent(drawLine);
+    canvas.dispatchEvent(new Event("drawing-changed"));
   }
 }
 
@@ -54,27 +54,30 @@ if (ctx) {
   ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
 }
 
+// Display Commands
+// function display(ctx: CanvasRenderingContext2D) {}
+
 // Event + Drawing
 interface Point {
   x: number;
   y: number;
 }
 let undoList: Point[][] = [];
-const redoList: Point[][] = [];
+let redoList: Point[][] = [];
 let linePoints: Point[];
 let isDrawing = false;
-const drawLine = new Event("drawing-changed");
+
+// const drawLine = new Event("drawing-changed");
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
   // Go thrugh all of the lines
   for (const line of undoList) {
     ctx.beginPath();
     // Go through all the points in the line and connect them with a path
-    for (let i = begPoint; i < line.length; i += advance) {
-      const p: Point = line[i];
-      if (i == begPoint) {
-        ctx.moveTo(p.x, p.y);
-      }
+    const [firstPoint, ...otherPoints] = line;
+    const p: Point = firstPoint;
+    ctx.moveTo(p.x, p.y);
+    for (const p of otherPoints) {
       ctx.lineTo(p.x, p.y);
     }
     ctx.stroke();
@@ -92,7 +95,7 @@ canvas.addEventListener("mousedown", (e) => {
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
     linePoints.push({ x: e.offsetX, y: e.offsetY });
-    canvas.dispatchEvent(drawLine);
+    canvas.dispatchEvent(new Event("drawing-changed"));
   }
 });
 
