@@ -6,7 +6,7 @@ const gameName = "Sticker Sketchpad";
 
 // Defining magic numbers
 const begPoint = 0;
-const advance = 1;
+
 // Undo or Redo based on the values of l1 and l2
 function undoRedo(l1: MarkerCommand[], l2: MarkerCommand[]) {
   if (l1.length) {
@@ -54,51 +54,43 @@ function clearCanvas() {
 // Step 5
 class MarkerCommand {
   currentLine;
-
   // Creates a var that holds the x,y coords of the current line
   constructor(x: number = begPoint, y: number = begPoint) {
     this.currentLine = [{ x, y }];
   }
-
   // Grows the line as the user drags their mouse cursor
   drag(x: number, y: number) {
-    this.currentLine.push({ x: x, y: y });
+    this.currentLine.push({ x, y });
   }
-
-  // Change drawing
+  // Changes drawing
   display(ctx: CanvasRenderingContext2D) {
-    ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
-    // Go thrugh all of the lines
-    for (const line of undoList) {
-      ctx.beginPath();
-      // Go through all the points in the line and connect them with a path
-      for (let i = begPoint; i < line.currentLine.length; i += advance) {
-        const p = line.currentLine[i];
-        if (i == begPoint) {
-          ctx.moveTo(p.x, p.y);
-        }
-        ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
+    // Go through all the points in the line and make a path between them
+    ctx.beginPath();
+    ctx.moveTo(this.currentLine[begPoint].x, this.currentLine[begPoint].y);
+    for (const p of this.currentLine) {
+      ctx.lineTo(p.x, p.y);
     }
+    ctx.stroke();
   }
 }
-
-let isDrawing = false;
 let undoList: MarkerCommand[] = [];
 let redoList: MarkerCommand[] = [];
-const marker: MarkerCommand = new MarkerCommand();
+let marker: MarkerCommand = new MarkerCommand();
+let isDrawing = false;
 
 canvas.addEventListener("drawing-changed", () => {
-  marker.display(canvas.getContext("2d")!);
+  ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
+  // Go through all the lines and display them
+  undoList.forEach((m: MarkerCommand) => {
+    m.display(canvas.getContext("2d")!);
+  });
 });
 
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
-  marker.currentLine = [];
-  undoList.push(Object.assign({}, marker));
-  marker.drag(e.offsetX, e.offsetY);
+  marker = new MarkerCommand(e.offsetX, e.offsetY);
+  undoList.push(marker);
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -129,4 +121,5 @@ Credits:
     https://kernhanda.github.io/tutorial-typescript-canvas-drawing/
 - Custom events:
     - https://developer.mozilla.org/en-US/docs/Web/Events/Creating_and_triggerin
+- Step 5: Used the explanation that Nicholas (the TA) and Adam wrote on the Discord
     */
