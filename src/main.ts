@@ -7,6 +7,7 @@ const gameName = "Sticker Sketchpad";
 // Defining magic numbers
 const begPoint = 0;
 const nonNeg = 1;
+
 // Step 6: I took it a step further and made even more options for marker sizes. I believe it's the same logic as requested on the slides.
 class BrushSizeCommand {
   brushSize: number;
@@ -108,14 +109,31 @@ function clearCanvas() {
   redoBrushList = [];
 }
 
+// Step 7: Show paint brush size next to the mouse
+const scale = 10;
+class ToolCommand {
+  x;
+  y;
+  constructor(x: number = begPoint, y: number = begPoint) {
+    this.x = x;
+    this.y = y;
+  }
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.font = (brush.brushSize * scale).toString() + "px Times New Roman";
+    ctx.fillStyle = "blue";
+    if (!isDrawing) {
+      ctx.fillText(".", this.x - scale - brush.brushSize, this.y);
+    }
+  }
+}
+let tool: ToolCommand = new ToolCommand();
+
 // Step 5
 class MarkerCommand {
   currentLine;
-  // brush;
   // Creates a var that holds the x,y coords of the current line
   constructor(x: number = begPoint, y: number = begPoint) {
     this.currentLine = [{ x, y }];
-    // this.brush = new BrushSizeCommand();
   }
   // Grows the line as the user drags their mouse cursor
   drag(x: number, y: number) {
@@ -138,9 +156,8 @@ let redoList: MarkerCommand[] = [];
 let marker: MarkerCommand = new MarkerCommand();
 let undoBrushList: number[] = [];
 let redoBrushList: number[] = [];
-
 let isDrawing = false;
-
+let isOutOfScreen = true;
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
   // Go through all the lines and display them
@@ -151,24 +168,48 @@ canvas.addEventListener("drawing-changed", () => {
   });
 });
 
+canvas.addEventListener("tool-moved", () => {
+  // If off screen, remove tool indicator, if one screen, update size
+  if (!isOutOfScreen) {
+    tool.draw(canvas.getContext("2d")!);
+  } else {
+    canvas.dispatchEvent(new Event("drawing-changed"));
+  }
+});
+
+canvas.addEventListener("mouseenter", (e) => {
+  isOutOfScreen = false;
+  tool = new ToolCommand(e.offsetX, e.offsetY);
+  canvas.dispatchEvent(new Event("tool-moved"));
+});
+
+canvas.addEventListener("mouseout", () => {
+  isOutOfScreen = true;
+  canvas.dispatchEvent(new Event("tool-moved"));
+});
+
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
   marker = new MarkerCommand(e.offsetX, e.offsetY);
   undoList.push(marker);
   undoBrushList.push(brush.brushSize);
+  // canvas.dispatchEvent(new Event("drawing-changed"));
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
     marker.drag(e.offsetX, e.offsetY);
-    canvas.dispatchEvent(new Event("drawing-changed"));
   }
+  canvas.dispatchEvent(new Event("drawing-changed"));
+  tool = new ToolCommand(e.offsetX, e.offsetY);
+  canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 // Stops drawing when mouse is up
 canvas.addEventListener("mouseup", () => {
   isDrawing = false;
+  canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 row1.appendChild(canvas);
