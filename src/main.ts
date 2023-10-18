@@ -6,25 +6,31 @@ const gameName = "Sticker Sketchpad";
 
 // Defining magic numbers
 const begPoint = 0;
-
-// Step 6
+const nonNeg = 1;
+// Step 6: I took it a step further and made even more options for marker sizes. I believe it's the same logic as requested on the slides.
 class BrushSizeCommand {
   brushSize: number;
+  intialSize = 2;
   constructor() {
-    this.brushSize = 3;
+    this.brushSize = this.intialSize;
   }
 
+  // Clicking on thin/thick buttons would change the brush size by 1
   changeBrush(isThin: boolean) {
     if (isThin) {
-      this.brushSize -= 1;
+      if (this.brushSize > nonNeg) {
+        this.brushSize--;
+      }
     } else {
-      this.brushSize += 1;
+      this.brushSize++;
     }
-    console.log(this.brushSize);
+    brushSize.innerHTML = "Brush Size: " + this.brushSize;
   }
 
+  // Reset the brush to intial state
   resetBrush() {
-    this.brushSize = 3;
+    this.brushSize = this.intialSize;
+    brushSize.innerHTML = "Brush Size: " + this.brushSize;
   }
 }
 // Undo or Redo based on the values of l1 and l2
@@ -37,16 +43,6 @@ function undoRedo(
   if (l1.length) {
     l2.push(l1.pop()!);
     l4.push(l3.pop()!);
-    console.log(
-      "undo: ",
-      l1.length,
-      " redo: ",
-      l2.length,
-      " undo brush: ",
-      l3.length,
-      " redo brush: ",
-      l4.length
-    );
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
 }
@@ -90,6 +86,9 @@ thinButton.addEventListener("click", () => brush.changeBrush(true), false);
 const thickButton = document.createElement("button");
 thickButton.innerHTML = "Thick";
 thickButton.addEventListener("click", () => brush.changeBrush(false), false);
+// Display brush size on screen
+const brushSize = document.createElement("div");
+brushSize.innerHTML = "Brush Size: " + brush.brushSize;
 
 // Canvas
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -148,7 +147,7 @@ canvas.addEventListener("drawing-changed", () => {
   let count = 0;
   undoList.forEach((m: MarkerCommand) => {
     m.display(canvas.getContext("2d")!, undoBrushList[count]);
-    count += 1;
+    count++;
   });
 });
 
@@ -158,12 +157,6 @@ canvas.addEventListener("mousedown", (e) => {
   marker = new MarkerCommand(e.offsetX, e.offsetY);
   undoList.push(marker);
   undoBrushList.push(brush.brushSize);
-  console.log(
-    "brush size: ",
-    undoBrushList.length,
-    " brushes: ",
-    undoBrushList
-  );
 });
 
 canvas.addEventListener("mousemove", (e) => {
@@ -184,6 +177,7 @@ row2.appendChild(undoButton);
 row2.appendChild(redoButton);
 row3.appendChild(thinButton);
 row3.appendChild(thickButton);
+row3.appendChild(brushSize);
 board.appendChild(row1);
 board.appendChild(row2);
 board.appendChild(row3);
