@@ -56,6 +56,7 @@ const board = document.createElement("div");
 const row1 = document.createElement("div");
 const row2 = document.createElement("div");
 const row3 = document.createElement("div");
+const row4 = document.createElement("div");
 
 // Clear button
 const clearButton = document.createElement("button");
@@ -91,6 +92,28 @@ thickButton.addEventListener("click", () => brush.changeBrush(false), false);
 const brushSize = document.createElement("div");
 brushSize.innerHTML = "Brush Size: " + brush.brushSize;
 
+// STICKERS
+let s1 = false;
+const sticker1 = document.createElement("button");
+sticker1.innerHTML = "😎";
+sticker1.addEventListener("click", () => {
+  s1 = true;
+  // isPlacingSticker = true;
+  canvas.dispatchEvent(new Event("tool-moved")), false;
+});
+const sticker2 = document.createElement("button");
+sticker2.innerHTML = "👀";
+sticker2.addEventListener(
+  "click",
+  () => canvas.dispatchEvent(new Event("tool-moved")),
+  false
+);
+const sticker3 = document.createElement("button");
+sticker3.innerHTML = "🧐";
+sticker3.addEventListener("click", () => {
+  canvas.dispatchEvent(new Event("tool-moved")), false;
+});
+
 // Canvas
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = 256;
@@ -109,8 +132,40 @@ function clearCanvas() {
   redoBrushList = [];
 }
 
+// Step 8
+
+class StickerCommand {
+  x;
+  y;
+  sticker;
+  constructor(x: number = begPoint, y: number = begPoint, sticker: string) {
+    this.x = x;
+    this.y = y;
+    this.sticker = sticker;
+  }
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.font = scale + scale + "px Times New Roman";
+    ctx.fillText(this.sticker, this.x - scale - brush.brushSize, this.y);
+    // s1Placed = true;
+  }
+
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    // ctx.font = scale + scale + "px Times New Roman";
+
+    // ctx.fillText(this.sticker, x - scale - brush.brushSize, y);
+    // console.log("here");
+    // ctx.translate(x, y);
+    // ctx.fillText(this.sticker, x - scale - brush.brushSize, y);
+    // ctx.resetTransform();
+  }
+}
+
+let sticker = new StickerCommand(0, 0, "😎");
 // Step 7: Show paint brush size next to the mouse
 const scale = 10;
+
 class ToolCommand {
   x;
   y;
@@ -157,6 +212,7 @@ let marker: MarkerCommand = new MarkerCommand();
 let undoBrushList: number[] = [];
 let redoBrushList: number[] = [];
 let isDrawing = false;
+let s1Placed = false;
 let isOutOfScreen = true;
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
@@ -172,6 +228,7 @@ canvas.addEventListener("tool-moved", () => {
   // If off screen, remove tool indicator, if one screen, update size
   if (!isOutOfScreen) {
     tool.draw(canvas.getContext("2d")!);
+    sticker.draw(canvas.getContext("2d")!);
   } else {
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
@@ -179,7 +236,11 @@ canvas.addEventListener("tool-moved", () => {
 
 canvas.addEventListener("mouseenter", (e) => {
   isOutOfScreen = false;
-  tool = new ToolCommand(e.offsetX, e.offsetY);
+  if (s1) {
+    sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
+  } else {
+    tool = new ToolCommand(e.offsetX, e.offsetY);
+  }
   canvas.dispatchEvent(new Event("tool-moved"));
 });
 
@@ -188,28 +249,49 @@ canvas.addEventListener("mouseout", () => {
   canvas.dispatchEvent(new Event("tool-moved"));
 });
 
+// sticker.addEventListener("click", function (event) { });
+
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
-  isDrawing = true;
-  marker = new MarkerCommand(e.offsetX, e.offsetY);
-  undoList.push(marker);
-  undoBrushList.push(brush.brushSize);
-  // canvas.dispatchEvent(new Event("drawing-changed"));
+  // console.log(e.offsetX, e.offsetY, sticker.x, sticker.y);
+  if (s1Placed && e.offsetX >= sticker.x - 20 && e.offsetY >= sticker.y - 20) {
+    // sticker.drag(e.offsetX, e.offsetY);
+    // s1Placed = false;
+    s1 = true;
+  }
+  if (s1 && !s1Placed) {
+    sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
+    s1Placed = true;
+    s1 = false;
+  } else {
+    isDrawing = true;
+    marker = new MarkerCommand(e.offsetX, e.offsetY);
+    undoList.push(marker);
+    undoBrushList.push(brush.brushSize);
+  }
+
+  canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
     marker.drag(e.offsetX, e.offsetY);
   }
+  if (s1) {
+    // sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
+    sticker.drag(e.offsetX, e.offsetY);
+    s1Placed = false;
+  } else {
+    tool = new ToolCommand(e.offsetX, e.offsetY);
+  }
   canvas.dispatchEvent(new Event("drawing-changed"));
-  tool = new ToolCommand(e.offsetX, e.offsetY);
+
   canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 // Stops drawing when mouse is up
 canvas.addEventListener("mouseup", () => {
   isDrawing = false;
-  canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 row1.appendChild(canvas);
@@ -219,9 +301,13 @@ row2.appendChild(redoButton);
 row3.appendChild(thinButton);
 row3.appendChild(thickButton);
 row3.appendChild(brushSize);
+row4.appendChild(sticker1);
+row4.appendChild(sticker2);
+row4.appendChild(sticker3);
 board.appendChild(row1);
 board.appendChild(row2);
 board.appendChild(row3);
+board.appendChild(row4);
 app.append(header);
 app.append(board);
 
