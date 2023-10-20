@@ -35,12 +35,19 @@ class BrushSizeCommand {
   }
 }
 // Undo or Redo based on the values of l1 and l2
+// let sOnScreen = [false, false, false];
 function undoRedo(
-  l1: MarkerCommand[],
-  l2: MarkerCommand[],
+  l1: (MarkerCommand | StickerCommand)[],
+  l2: (MarkerCommand | StickerCommand)[],
   l3: number[],
   l4: number[]
 ) {
+  //     if (save.sticker == stickerType[i]) {
+  //       sOnScreen[i] = false;
+  //     }
+  //   }
+  // }
+
   if (l1.length) {
     l2.push(l1.pop()!);
     l4.push(l3.pop()!);
@@ -48,6 +55,35 @@ function undoRedo(
   }
 }
 
+// Step 8
+
+class StickerCommand {
+  x;
+  y;
+  sticker;
+  onScreen;
+  constructor(x: number = begPoint, y: number = begPoint, sticker: string) {
+    this.x = x;
+    this.y = y;
+    this.sticker = sticker;
+    this.onScreen = true;
+  }
+  draw(ctx: CanvasRenderingContext2D) {
+    if (!this.onScreen) {
+      ctx.fillStyle = "rgba(255, 0, 0, 0)";
+    } else {
+      ctx.fillStyle = "rgba(255, 0, 0, 1)";
+    }
+    ctx.font = scale + scale + "px Times New Roman";
+    ctx.fillText(this.sticker, this.x - scale - scale, this.y);
+    // s1Placed = true;
+  }
+
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
 // Title
 document.title = gameName;
 const header = document.createElement("h1");
@@ -65,19 +101,23 @@ clearButton.addEventListener("click", () => clearCanvas(), false);
 // Undo button
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "Undo";
-undoButton.addEventListener(
-  "click",
-  () => undoRedo(undoList, redoList, undoBrushList, redoBrushList),
-  false
-);
+undoButton.addEventListener("click", () => {
+  const save = undoList[undoList.length - 1];
+  if (save instanceof StickerCommand) {
+    save.onScreen = false;
+  }
+  undoRedo(undoList, redoList, undoBrushList, redoBrushList), false;
+});
 // Redo button
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "Redo";
-redoButton.addEventListener(
-  "click",
-  () => undoRedo(redoList, undoList, redoBrushList, undoBrushList),
-  false
-);
+redoButton.addEventListener("click", () => {
+  const save = redoList[redoList.length - 1];
+  if (save instanceof StickerCommand) {
+    save.onScreen = true;
+  }
+  undoRedo(redoList, undoList, redoBrushList, undoBrushList), false;
+});
 // Brush size class var
 const brush = new BrushSizeCommand();
 // Thin button
@@ -88,23 +128,28 @@ thinButton.addEventListener("click", () => brush.changeBrush(true), false);
 const thickButton = document.createElement("button");
 thickButton.innerHTML = "Thick";
 thickButton.addEventListener("click", () => brush.changeBrush(false), false);
-// Display brush size on screen
+// draw brush size on screen
 const brushSize = document.createElement("div");
 brushSize.innerHTML = "Brush Size: " + brush.brushSize;
 
 // STICKERS
 // 1 is selected not placed, 2 is not selected not placed, 3 is not selected is placed, 4 is selected is placed
-// const stickers: number[] = [];
 const stickerType: string[] = ["😎", "👀", "🧐"];
 const sSelected: boolean[] = [];
 const sPlaced: boolean[] = [];
-// let s1 = false;
+
+const stick1 = new StickerCommand(begPoint, begPoint, stickerType[0]);
+stick1.sticker = stickerType[0];
+const stick2 = new StickerCommand(begPoint, begPoint, stickerType[1]);
+stick2.sticker = stickerType[1];
+const stick3 = new StickerCommand(begPoint, begPoint, stickerType[2]);
+stick3.sticker = stickerType[2];
+const actualStickers: StickerCommand[] = [stick1, stick2, stick3];
+
 const sticker1 = document.createElement("button");
 sticker1.innerHTML = stickerType[0];
 sticker1.addEventListener("click", () => {
-  // s1 = true;
   sSelected[0] = true;
-  // isPlacingSticker = true;
   canvas.dispatchEvent(new Event("tool-moved")), false;
 });
 const sticker2 = document.createElement("button");
@@ -136,42 +181,10 @@ function clearCanvas() {
   brush.resetBrush();
   undoBrushList = [];
   redoBrushList = [];
-}
-
-// Step 8
-
-class StickerCommand {
-  x;
-  y;
-  sticker;
-  constructor(x: number = begPoint, y: number = begPoint, sticker: string) {
-    this.x = x;
-    this.y = y;
-    this.sticker = sticker;
-  }
-  draw(ctx: CanvasRenderingContext2D) {
-    ctx.font = scale + scale + "px Times New Roman";
-    ctx.fillText(this.sticker, this.x - scale - brush.brushSize, this.y);
-    // s1Placed = true;
-  }
-
-  drag(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-    // ctx.font = scale + scale + "px Times New Roman";
-
-    // ctx.fillText(this.sticker, x - scale - brush.brushSize, y);
-    // console.log("here");
-    // ctx.translate(x, y);
-    // ctx.fillText(this.sticker, x - scale - brush.brushSize, y);
-    // ctx.resetTransform();
+  for (let i = begPoint; i < actualStickers.length; i++) {
+    actualStickers[i].onScreen = false;
   }
 }
-
-const stick1 = new StickerCommand(0, 0, stickerType[0]);
-const stick2 = new StickerCommand(0, 0, stickerType[1]);
-const stick3 = new StickerCommand(0, 0, stickerType[2]);
-const actualStickers: StickerCommand[] = [stick1, stick2, stick3];
 
 // Step 7: Show paint brush size next to the mouse
 const scale = 10;
@@ -205,7 +218,7 @@ class MarkerCommand {
     this.currentLine.push({ x, y });
   }
   // Changes drawing
-  display(ctx: CanvasRenderingContext2D, brushSize: number) {
+  draw(ctx: CanvasRenderingContext2D, brushSize: number) {
     // Go through all the points in the line and make a path between them
     ctx.lineWidth = brushSize;
     ctx.beginPath();
@@ -216,8 +229,9 @@ class MarkerCommand {
     ctx.stroke();
   }
 }
-let undoList: MarkerCommand[] = [];
-let redoList: MarkerCommand[] = [];
+
+let undoList: (MarkerCommand | StickerCommand)[] = [];
+let redoList: (MarkerCommand | StickerCommand)[] = [];
 let marker: MarkerCommand = new MarkerCommand();
 let undoBrushList: number[] = [];
 let redoBrushList: number[] = [];
@@ -226,21 +240,22 @@ let isDrawing = false;
 let isOutOfScreen = true;
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
-  // Go through all the lines and display them
-  let count = 0;
-  undoList.forEach((m: MarkerCommand) => {
-    m.display(canvas.getContext("2d")!, undoBrushList[count]);
+  // Go through all the lines and draw them
+  let count = begPoint;
+  undoList.forEach((m) => {
+    m.draw(canvas.getContext("2d")!, undoBrushList[count]);
     count++;
   });
 });
 
 canvas.addEventListener("tool-moved", () => {
-  // If off screen, remove tool indicator, if one screen, update size
+  // If off screen, remove tool indicator, if on screen, update size
   if (!isOutOfScreen) {
     tool.draw(canvas.getContext("2d")!);
-    for (let i = 0; i < sSelected.length; i++) {
+    for (let i = begPoint; i < sSelected.length; i++) {
       actualStickers[i].draw(canvas.getContext("2d")!);
     }
+    // canvas.dispatchEvent(new Event("drawing-changed"));
     // sticker.draw(canvas.getContext("2d")!);
   } else {
     canvas.dispatchEvent(new Event("drawing-changed"));
@@ -250,17 +265,12 @@ canvas.addEventListener("tool-moved", () => {
 canvas.addEventListener("mouseenter", (e) => {
   isOutOfScreen = false;
   let check = false;
-  for (let i = 0; i < sSelected.length; i++) {
+  for (let i = begPoint; i < sSelected.length; i++) {
     if (sSelected[i]) {
-      actualStickers[i] = new StickerCommand(
-        e.offsetX,
-        e.offsetY,
-        stickerType[i]
-      );
+      actualStickers[i].drag(e.offsetX, e.offsetY);
       check = true;
     }
   }
-
   if (!check) {
     tool = new ToolCommand(e.offsetX, e.offsetY);
   }
@@ -269,58 +279,35 @@ canvas.addEventListener("mouseenter", (e) => {
 
 canvas.addEventListener("mouseout", () => {
   isOutOfScreen = true;
-  // canvas.dispatchEvent(new Event("tool-moved"));
 });
-
-// sticker.addEventListener("click", function (event) { });
 
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
   let check = false;
-  for (let i = 0; i < sSelected.length; i++) {
-    // console.log(
-    //   "start palcemtn!!",
-    //   i,
-    //   "S placed 1: ",
-    //   sPlaced[0],
-    //   "S placed 2: ",
-    //   sPlaced[1],
-    //   " s selected 1 ",
-    //   sSelected[0],
-    //   " s selected 2 ",
-    //   sSelected[1]
-    // );
-    // console.log(e.offsetX, e.offsetY, actualStickers[i].x, actualStickers[i].y);
+  for (let i = begPoint; i < sSelected.length; i++) {
     if (
       sPlaced[i] &&
-      e.offsetX >= actualStickers[i].x - 15 &&
-      e.offsetX <= actualStickers[i].x + 15 &&
-      e.offsetY <= actualStickers[i].y + 15 &&
-      e.offsetY >= actualStickers[i].y - 15
+      actualStickers[i].onScreen &&
+      ((e.offsetX >= actualStickers[i].x - scale - scale &&
+        e.offsetX <= actualStickers[i].x + scale + scale &&
+        e.offsetY <= actualStickers[i].y + scale + scale &&
+        e.offsetY >= actualStickers[i].y - scale - scale) ||
+        sSelected[i])
     ) {
       sSelected[i] = true;
+      actualStickers[i].onScreen = true;
     }
   }
-  for (let i = 0; i < sSelected.length; i++) {
-    console.log(
-      "S placed 1: ",
-      sPlaced[0],
-      "S placed 2: ",
-      sPlaced[1],
-      " s selected 1 ",
-      sSelected[0],
-      " s selected 2 ",
-      sSelected[1]
-    );
+  for (let i = begPoint; i < sSelected.length; i++) {
     if (sSelected[i] && !sPlaced[i]) {
-      actualStickers[i] = new StickerCommand(
-        e.offsetX,
-        e.offsetY,
-        stickerType[i]
-      );
+      actualStickers[i].drag(e.offsetX, e.offsetY);
       sPlaced[i] = true;
       sSelected[i] = false;
+      actualStickers[i].onScreen = true;
+
       check = true;
+      undoList.push(actualStickers[i]);
+      undoBrushList.push(brush.brushSize);
       break;
     }
   }
@@ -331,23 +318,6 @@ canvas.addEventListener("mousedown", (e) => {
     undoList.push(marker);
     undoBrushList.push(brush.brushSize);
   }
-  // // console.log(e.offsetX, e.offsetY, sticker.x, sticker.y);
-  // if (s1Placed && e.offsetX >= sticker.x - 20 && e.offsetY >= sticker.y - 20) {
-  //   // sticker.drag(e.offsetX, e.offsetY);
-  //   // s1Placed = false;
-  //   s1 = true;
-  // }
-  // if (s1 && !s1Placed) {
-  //   sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
-  //   s1Placed = true;
-  //   s1 = false;
-  // } else {
-  //   isDrawing = true;
-  //   marker = new MarkerCommand(e.offsetX, e.offsetY);
-  //   undoList.push(marker);
-  //   undoBrushList.push(brush.brushSize);
-  // }
-
   canvas.dispatchEvent(new Event("tool-moved"));
 });
 
@@ -356,7 +326,7 @@ canvas.addEventListener("mousemove", (e) => {
     marker.drag(e.offsetX, e.offsetY);
   }
   let check = false;
-  for (let i = 0; i < sSelected.length; i++) {
+  for (let i = begPoint; i < sSelected.length; i++) {
     if (sSelected[i]) {
       actualStickers[i].drag(e.offsetX, e.offsetY);
       sPlaced[i] = false;
@@ -368,17 +338,6 @@ canvas.addEventListener("mousemove", (e) => {
   }
   canvas.dispatchEvent(new Event("drawing-changed"));
   canvas.dispatchEvent(new Event("tool-moved"));
-
-  // if (s1) {
-  //   // sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
-  //   sticker.drag(e.offsetX, e.offsetY);
-  //   s1Placed = false;
-  // } else {
-  //   tool = new ToolCommand(e.offsetX, e.offsetY);
-  // }
-  // canvas.dispatchEvent(new Event("drawing-changed"));
-
-  // canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 // Stops drawing when mouse is up
