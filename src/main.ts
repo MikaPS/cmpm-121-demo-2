@@ -93,24 +93,30 @@ const brushSize = document.createElement("div");
 brushSize.innerHTML = "Brush Size: " + brush.brushSize;
 
 // STICKERS
-let s1 = false;
+// 1 is selected not placed, 2 is not selected not placed, 3 is not selected is placed, 4 is selected is placed
+// const stickers: number[] = [];
+const stickerType: string[] = ["😎", "👀", "🧐"];
+const sSelected: boolean[] = [];
+const sPlaced: boolean[] = [];
+// let s1 = false;
 const sticker1 = document.createElement("button");
-sticker1.innerHTML = "😎";
+sticker1.innerHTML = stickerType[0];
 sticker1.addEventListener("click", () => {
-  s1 = true;
+  // s1 = true;
+  sSelected[0] = true;
   // isPlacingSticker = true;
   canvas.dispatchEvent(new Event("tool-moved")), false;
 });
 const sticker2 = document.createElement("button");
-sticker2.innerHTML = "👀";
-sticker2.addEventListener(
-  "click",
-  () => canvas.dispatchEvent(new Event("tool-moved")),
-  false
-);
+sticker2.innerHTML = stickerType[1];
+sticker2.addEventListener("click", () => {
+  sSelected[1] = true;
+  canvas.dispatchEvent(new Event("tool-moved")), false;
+});
 const sticker3 = document.createElement("button");
-sticker3.innerHTML = "🧐";
+sticker3.innerHTML = stickerType[2];
 sticker3.addEventListener("click", () => {
+  sSelected[2] = true;
   canvas.dispatchEvent(new Event("tool-moved")), false;
 });
 
@@ -162,7 +168,11 @@ class StickerCommand {
   }
 }
 
-let sticker = new StickerCommand(0, 0, "😎");
+const stick1 = new StickerCommand(0, 0, stickerType[0]);
+const stick2 = new StickerCommand(0, 0, stickerType[1]);
+const stick3 = new StickerCommand(0, 0, stickerType[2]);
+const actualStickers: StickerCommand[] = [stick1, stick2, stick3];
+
 // Step 7: Show paint brush size next to the mouse
 const scale = 10;
 
@@ -212,7 +222,7 @@ let marker: MarkerCommand = new MarkerCommand();
 let undoBrushList: number[] = [];
 let redoBrushList: number[] = [];
 let isDrawing = false;
-let s1Placed = false;
+// let s1Placed = false;
 let isOutOfScreen = true;
 canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
@@ -228,7 +238,10 @@ canvas.addEventListener("tool-moved", () => {
   // If off screen, remove tool indicator, if one screen, update size
   if (!isOutOfScreen) {
     tool.draw(canvas.getContext("2d")!);
-    sticker.draw(canvas.getContext("2d")!);
+    for (let i = 0; i < sSelected.length; i++) {
+      actualStickers[i].draw(canvas.getContext("2d")!);
+    }
+    // sticker.draw(canvas.getContext("2d")!);
   } else {
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
@@ -236,9 +249,19 @@ canvas.addEventListener("tool-moved", () => {
 
 canvas.addEventListener("mouseenter", (e) => {
   isOutOfScreen = false;
-  if (s1) {
-    sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
-  } else {
+  let check = false;
+  for (let i = 0; i < sSelected.length; i++) {
+    if (sSelected[i]) {
+      actualStickers[i] = new StickerCommand(
+        e.offsetX,
+        e.offsetY,
+        stickerType[i]
+      );
+      check = true;
+    }
+  }
+
+  if (!check) {
     tool = new ToolCommand(e.offsetX, e.offsetY);
   }
   canvas.dispatchEvent(new Event("tool-moved"));
@@ -246,29 +269,84 @@ canvas.addEventListener("mouseenter", (e) => {
 
 canvas.addEventListener("mouseout", () => {
   isOutOfScreen = true;
-  canvas.dispatchEvent(new Event("tool-moved"));
+  // canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 // sticker.addEventListener("click", function (event) { });
 
 // Gets original coords and starts the drawing
 canvas.addEventListener("mousedown", (e) => {
-  // console.log(e.offsetX, e.offsetY, sticker.x, sticker.y);
-  if (s1Placed && e.offsetX >= sticker.x - 20 && e.offsetY >= sticker.y - 20) {
-    // sticker.drag(e.offsetX, e.offsetY);
-    // s1Placed = false;
-    s1 = true;
+  let check = false;
+  for (let i = 0; i < sSelected.length; i++) {
+    // console.log(
+    //   "start palcemtn!!",
+    //   i,
+    //   "S placed 1: ",
+    //   sPlaced[0],
+    //   "S placed 2: ",
+    //   sPlaced[1],
+    //   " s selected 1 ",
+    //   sSelected[0],
+    //   " s selected 2 ",
+    //   sSelected[1]
+    // );
+    // console.log(e.offsetX, e.offsetY, actualStickers[i].x, actualStickers[i].y);
+    if (
+      sPlaced[i] &&
+      e.offsetX >= actualStickers[i].x - 15 &&
+      e.offsetX <= actualStickers[i].x + 15 &&
+      e.offsetY <= actualStickers[i].y + 15 &&
+      e.offsetY >= actualStickers[i].y - 15
+    ) {
+      sSelected[i] = true;
+    }
   }
-  if (s1 && !s1Placed) {
-    sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
-    s1Placed = true;
-    s1 = false;
-  } else {
+  for (let i = 0; i < sSelected.length; i++) {
+    console.log(
+      "S placed 1: ",
+      sPlaced[0],
+      "S placed 2: ",
+      sPlaced[1],
+      " s selected 1 ",
+      sSelected[0],
+      " s selected 2 ",
+      sSelected[1]
+    );
+    if (sSelected[i] && !sPlaced[i]) {
+      actualStickers[i] = new StickerCommand(
+        e.offsetX,
+        e.offsetY,
+        stickerType[i]
+      );
+      sPlaced[i] = true;
+      sSelected[i] = false;
+      check = true;
+      break;
+    }
+  }
+
+  if (!check) {
     isDrawing = true;
     marker = new MarkerCommand(e.offsetX, e.offsetY);
     undoList.push(marker);
     undoBrushList.push(brush.brushSize);
   }
+  // // console.log(e.offsetX, e.offsetY, sticker.x, sticker.y);
+  // if (s1Placed && e.offsetX >= sticker.x - 20 && e.offsetY >= sticker.y - 20) {
+  //   // sticker.drag(e.offsetX, e.offsetY);
+  //   // s1Placed = false;
+  //   s1 = true;
+  // }
+  // if (s1 && !s1Placed) {
+  //   sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
+  //   s1Placed = true;
+  //   s1 = false;
+  // } else {
+  //   isDrawing = true;
+  //   marker = new MarkerCommand(e.offsetX, e.offsetY);
+  //   undoList.push(marker);
+  //   undoBrushList.push(brush.brushSize);
+  // }
 
   canvas.dispatchEvent(new Event("tool-moved"));
 });
@@ -277,16 +355,30 @@ canvas.addEventListener("mousemove", (e) => {
   if (isDrawing) {
     marker.drag(e.offsetX, e.offsetY);
   }
-  if (s1) {
-    // sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
-    sticker.drag(e.offsetX, e.offsetY);
-    s1Placed = false;
-  } else {
+  let check = false;
+  for (let i = 0; i < sSelected.length; i++) {
+    if (sSelected[i]) {
+      actualStickers[i].drag(e.offsetX, e.offsetY);
+      sPlaced[i] = false;
+      check = true;
+    }
+  }
+  if (!check) {
     tool = new ToolCommand(e.offsetX, e.offsetY);
   }
   canvas.dispatchEvent(new Event("drawing-changed"));
-
   canvas.dispatchEvent(new Event("tool-moved"));
+
+  // if (s1) {
+  //   // sticker = new StickerCommand(e.offsetX, e.offsetY, "😎");
+  //   sticker.drag(e.offsetX, e.offsetY);
+  //   s1Placed = false;
+  // } else {
+  //   tool = new ToolCommand(e.offsetX, e.offsetY);
+  // }
+  // canvas.dispatchEvent(new Event("drawing-changed"));
+
+  // canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 // Stops drawing when mouse is up
