@@ -85,7 +85,7 @@ function customSticker(text: string, i: number) {
   const button = document.createElement("button");
   button.addEventListener("click", () => {
     if (text == "custom") {
-      const t = prompt("Custom sticker text", "🧽")!;
+      const t = prompt("Custom sticker text", "⚠️")!;
       availableStickers.push({ value: t });
       customSticker(t, availableStickers.length - 1);
       return;
@@ -101,11 +101,11 @@ function customSticker(text: string, i: number) {
 }
 
 // Step 6: I took it a step further and made even more options for marker sizes. I believe it's the same logic as requested on the slides.
+const intialSize = 3;
 class BrushSizeCommand {
   brushSize: number;
-  intialSize = 2;
   constructor() {
-    this.brushSize = this.intialSize;
+    this.brushSize = intialSize;
   }
 
   // Clicking on thin/thick buttons would change the brush size by 1
@@ -122,7 +122,7 @@ class BrushSizeCommand {
 
   // Reset the brush to intial state
   resetBrush() {
-    this.brushSize = this.intialSize;
+    this.brushSize = intialSize;
     brushSize.innerHTML = "Brush Size: " + this.brushSize;
   }
 }
@@ -177,7 +177,7 @@ exportButton.addEventListener("click", () => {
   const scaleUp = 4;
   let count = begPoint;
   undoList.forEach((m) => {
-    ctx2.setTransform(1, 0, 0, 1, 0, 0);
+    ctx2.resetTransform();
     ctx2.scale(scaleUp, scaleUp);
     m.draw(ctx2, undoBrushList[count]);
     count++;

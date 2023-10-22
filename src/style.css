@@ -56,13 +56,6 @@ button {
   transition: border-color 0.25s;
 }
 
-canvas {
-  box-sizing: border-box;
-  border: solid 3px black;
-  /* border: groove 1em rgb(134, 211, 134); */
-  border-radius: 50% 20% / 10% 40%;
-}
-
 button:hover {
   border-color: #646cff;
 }
@@ -72,10 +65,10 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: #b5b5b5;
+    background-color: #29002d;
   }
 
   a:hover {
@@ -83,6 +76,40 @@ button:focus-visible {
   }
 
   button {
-    background-color: #f9f9f9;
+    background-color: #6c6c6c;
+    color: #b5b5b5;
+  }
+
+  * {
+    color: hsl(0, 0%, 71%);
+  }
+
+  canvas {
+    box-sizing: border-box;
+    border: solid 3px rgb(181, 181, 181);
+    /* border: groove 1em rgb(134, 211, 134); */
+    border-radius: 50% 20% / 10% 40%;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #fde8ff;
+  }
+
+  a:hover {
+    color: #747bff;
+  }
+
+  button {
+    background-color: #f7f7f7;
+  }
+
+  canvas {
+    box-sizing: border-box;
+    border: solid 3px black;
+    /* border: groove 1em rgb(134, 211, 134); */
+    border-radius: 50% 20% / 10% 40%;
   }
 }
