@@ -17,6 +17,7 @@ const row1 = document.createElement("div");
 const row2 = document.createElement("div");
 const row3 = document.createElement("div");
 const row4 = document.createElement("div");
+const row5 = document.createElement("div");
 
 // Canvas
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -67,7 +68,6 @@ class StickerCommand {
     }
     ctx.font = scale + scale + "px Times New Roman";
     ctx.fillText(this.sticker, this.x - scale - scale, this.y);
-    // s1Placed = true;
   }
 
   drag(x: number, y: number) {
@@ -91,9 +91,10 @@ function customSticker(text: string, i: number) {
       return;
     }
     sSelected[i] = true;
+    stick.onScreen = true;
   });
   button.innerHTML = text;
-  row4.append(button);
+  row5.append(button);
   const stick = new StickerCommand(begPoint, begPoint, text);
   actualStickers.push(stick);
   canvas.dispatchEvent(new Event("tool-moved")), false;
@@ -163,6 +164,35 @@ redoButton.addEventListener("click", () => {
   }
   undoRedo(redoList, undoList, redoBrushList, undoBrushList), false;
 });
+
+// step 10
+// export button
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "Export";
+exportButton.addEventListener("click", () => {
+  const canvasExport = document.getElementById("canvas") as HTMLCanvasElement;
+  canvasExport.width = 1024;
+  canvasExport.height = 1024;
+  const ctx2 = canvasExport.getContext("2d")!;
+  const scaleUp = 4;
+  let count = begPoint;
+  undoList.forEach((m) => {
+    ctx2.setTransform(1, 0, 0, 1, 0, 0);
+    ctx2.scale(scaleUp, scaleUp);
+    m.draw(ctx2, undoBrushList[count]);
+    count++;
+  });
+  canvasExport.dispatchEvent(new Event("drawing-changed"));
+  const anchor = document.createElement("a");
+  anchor.href = canvasExport.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+  // canvasExport.remove();
+  const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  canvas.width = 256;
+  canvas.height = 256;
+});
+
 // Brush size class var
 const brush = new BrushSizeCommand();
 // Thin button
@@ -263,8 +293,6 @@ canvas.addEventListener("tool-moved", () => {
     for (let i = begPoint; i < sSelected.length; i++) {
       actualStickers[i].draw(canvas.getContext("2d")!);
     }
-    // canvas.dispatchEvent(new Event("drawing-changed"));
-    // sticker.draw(canvas.getContext("2d")!);
   } else {
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
@@ -360,15 +388,14 @@ row2.appendChild(redoButton);
 row3.appendChild(thinButton);
 row3.appendChild(thickButton);
 row3.appendChild(brushSize);
-// buttons.forEach((b) => {
-//   row4.appendChild(b);
-// });
 board.appendChild(row1);
 board.appendChild(row2);
 board.appendChild(row3);
 board.appendChild(row4);
+board.appendChild(row5);
 app.append(header);
 app.append(board);
+app.appendChild(exportButton);
 
 /*
 Credits:
