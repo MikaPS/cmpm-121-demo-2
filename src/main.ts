@@ -24,7 +24,7 @@ const row6 = document.createElement("div");
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 canvas.width = 256;
 canvas.height = 256;
-const ctx = canvas.getContext("2d")!;
+let ctx = canvas.getContext("2d")!;
 ctx.fillStyle = "white";
 ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
 
@@ -89,7 +89,7 @@ class StickerCommand {
   }
   draw(ctx: CanvasRenderingContext2D) {
     if (!this.onScreen) {
-      ctx.fillStyle = "rgba(${rangeValue}, 0, 0, 0)";
+      ctx.fillStyle = "rgba(0, 0, 0, 0)";
     } else {
       ctx.fillStyle = color;
     }
@@ -219,21 +219,15 @@ exportButton.addEventListener("click", () => {
   const canvasExport = document.getElementById("canvas") as HTMLCanvasElement;
   canvasExport.width = 1024;
   canvasExport.height = 1024;
-  const ctx2 = canvasExport.getContext("2d")!;
+  ctx = canvasExport.getContext("2d")!;
   const scaleUp = 4;
-  let count = begPoint;
-  undoList.forEach((m) => {
-    ctx2.resetTransform();
-    ctx2.scale(scaleUp, scaleUp);
-    m.draw(ctx2, undoBrushList[count], undoColorList[count]);
-    count++;
-  });
+  ctx.resetTransform();
+  ctx.scale(scaleUp, scaleUp);
   canvasExport.dispatchEvent(new Event("drawing-changed"));
   const anchor = document.createElement("a");
   anchor.href = canvasExport.toDataURL("image/png");
   anchor.download = "sketchpad.png";
   anchor.click();
-  // canvasExport.remove();
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
   canvas.width = 256;
   canvas.height = 256;
@@ -285,7 +279,6 @@ class ToolCommand {
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.font = (brush.brushSize * scale).toString() + "px Times New Roman";
-    // ctx.fillStyle = "blue";
     if (!isDrawing) {
       ctx.fillStyle = color;
       ctx.fillText(".", this.x - scale - brush.brushSize, this.y);
@@ -334,7 +327,7 @@ canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
   // Go through all the lines and draw them
   let count = begPoint;
-  // console.log(undoColorList);
+  // console.log(undoList);
   undoList.forEach((m) => {
     m.draw(
       canvas.getContext("2d")!,

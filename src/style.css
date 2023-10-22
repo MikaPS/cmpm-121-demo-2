@@ -77,20 +77,47 @@ button:focus-visible {
 } */
 
 /* Customize the thumb (slider button) */
-input[type="range"]::-webkit-slider-thumb {
-  /* -webkit-appearance: none;
+/* input[type="range"]::-webkit-slider-thumb { */
+/* -webkit-appearance: none;
   appearance: none;
   width: 15px;
   height: 15px; */
-  background: #e221b8;
-  /* cursor: pointer; */
-}
+/* background: #e221b8; */
+/* cursor: pointer; */
+/* } */
 
 /* Display the selected value */
 /* #rangeValue {
   text-align: center;
   font-size: 20px;
 } */
+
+#rangeRed {
+  -webkit-appearance: none;
+  background: red;
+}
+
+#rangeGreen {
+  -webkit-appearance: none;
+  background: rgb(40, 200, 30);
+}
+
+#rangeBlue {
+  -webkit-appearance: none;
+  background: rgb(0, 0, 255);
+}
+
+#rangeRedVal {
+  color: rgb(255, 0, 0);
+}
+
+#rangeGreenVal {
+  color: rgb(40, 200, 30);
+}
+
+#rangeBlueVal {
+  color: rgb(0, 0, 255);
+}
 
 @media (prefers-color-scheme: dark) {
   :root {
