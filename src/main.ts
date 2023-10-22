@@ -8,6 +8,111 @@ const gameName = "Sticker Sketchpad";
 const begPoint = 0;
 const nonNeg = 1;
 
+// Title
+document.title = gameName;
+const header = document.createElement("h1");
+header.innerHTML = gameName;
+const board = document.createElement("div");
+const row1 = document.createElement("div");
+const row2 = document.createElement("div");
+const row3 = document.createElement("div");
+const row4 = document.createElement("div");
+
+// Canvas
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+canvas.width = 256;
+canvas.height = 256;
+const ctx = canvas.getContext("2d")!;
+ctx.fillStyle = "white";
+ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
+
+// Step 9
+interface Sticker {
+  value: string;
+}
+
+const availableStickers: Sticker[] = [
+  {
+    value: "😎",
+  },
+  {
+    value: "👀",
+  },
+  {
+    value: "🧐",
+  },
+  {
+    value: "custom",
+  },
+];
+
+// Step 8
+
+class StickerCommand {
+  x;
+  y;
+  sticker;
+  onScreen;
+  constructor(x: number = begPoint, y: number = begPoint, sticker: string) {
+    this.x = x;
+    this.y = y;
+    this.sticker = sticker;
+    this.onScreen = true;
+  }
+  draw(ctx: CanvasRenderingContext2D) {
+    if (!this.onScreen) {
+      ctx.fillStyle = "rgba(255, 0, 0, 0)";
+    } else {
+      ctx.fillStyle = "rgba(255, 0, 0, 1)";
+    }
+    ctx.font = scale + scale + "px Times New Roman";
+    ctx.fillText(this.sticker, this.x - scale - scale, this.y);
+    // s1Placed = true;
+  }
+
+  drag(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+// Add buttons
+// const buttons: HTMLButtonElement[] = [];
+const actualStickers: StickerCommand[] = []; // [stick1, stick2, stick3];
+
+// stickerCount = 0;
+availableStickers.forEach((obj, i) => {
+  // Buttons
+  const button = document.createElement("button");
+  button.addEventListener("click", () => {
+    if (obj.value == "custom") {
+      const text = prompt("Custom sticker text", "🧽")!;
+      customSticker(text);
+      return;
+    }
+    sSelected[i] = true;
+  });
+  button.innerHTML = obj.value;
+  row4.appendChild(button);
+
+  // Stickers
+  const stick = new StickerCommand(begPoint, begPoint, obj.value);
+  actualStickers.push(stick);
+  canvas.dispatchEvent(new Event("tool-moved")), false;
+});
+
+// Custom sticker
+function customSticker(text: string) {
+  availableStickers.push({ value: text });
+  const button = document.createElement("button");
+  button.addEventListener("click", () => {
+    sSelected[availableStickers.length - 1] = true;
+    canvas.dispatchEvent(new Event("tool-moved")), false;
+  });
+  button.innerHTML = text;
+  app.append(button);
+  const stick = new StickerCommand(begPoint, begPoint, text);
+  actualStickers.push(stick);
+}
 // Step 6: I took it a step further and made even more options for marker sizes. I believe it's the same logic as requested on the slides.
 class BrushSizeCommand {
   brushSize: number;
@@ -42,57 +147,12 @@ function undoRedo(
   l3: number[],
   l4: number[]
 ) {
-  //     if (save.sticker == stickerType[i]) {
-  //       sOnScreen[i] = false;
-  //     }
-  //   }
-  // }
-
   if (l1.length) {
     l2.push(l1.pop()!);
     l4.push(l3.pop()!);
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
 }
-
-// Step 8
-
-class StickerCommand {
-  x;
-  y;
-  sticker;
-  onScreen;
-  constructor(x: number = begPoint, y: number = begPoint, sticker: string) {
-    this.x = x;
-    this.y = y;
-    this.sticker = sticker;
-    this.onScreen = true;
-  }
-  draw(ctx: CanvasRenderingContext2D) {
-    if (!this.onScreen) {
-      ctx.fillStyle = "rgba(255, 0, 0, 0)";
-    } else {
-      ctx.fillStyle = "rgba(255, 0, 0, 1)";
-    }
-    ctx.font = scale + scale + "px Times New Roman";
-    ctx.fillText(this.sticker, this.x - scale - scale, this.y);
-    // s1Placed = true;
-  }
-
-  drag(x: number, y: number) {
-    this.x = x;
-    this.y = y;
-  }
-}
-// Title
-document.title = gameName;
-const header = document.createElement("h1");
-header.innerHTML = gameName;
-const board = document.createElement("div");
-const row1 = document.createElement("div");
-const row2 = document.createElement("div");
-const row3 = document.createElement("div");
-const row4 = document.createElement("div");
 
 // Clear button
 const clearButton = document.createElement("button");
@@ -133,45 +193,8 @@ const brushSize = document.createElement("div");
 brushSize.innerHTML = "Brush Size: " + brush.brushSize;
 
 // STICKERS
-// 1 is selected not placed, 2 is not selected not placed, 3 is not selected is placed, 4 is selected is placed
-const stickerType: string[] = ["😎", "👀", "🧐"];
 const sSelected: boolean[] = [];
 const sPlaced: boolean[] = [];
-
-const stick1 = new StickerCommand(begPoint, begPoint, stickerType[0]);
-stick1.sticker = stickerType[0];
-const stick2 = new StickerCommand(begPoint, begPoint, stickerType[1]);
-stick2.sticker = stickerType[1];
-const stick3 = new StickerCommand(begPoint, begPoint, stickerType[2]);
-stick3.sticker = stickerType[2];
-const actualStickers: StickerCommand[] = [stick1, stick2, stick3];
-
-const sticker1 = document.createElement("button");
-sticker1.innerHTML = stickerType[0];
-sticker1.addEventListener("click", () => {
-  sSelected[0] = true;
-  canvas.dispatchEvent(new Event("tool-moved")), false;
-});
-const sticker2 = document.createElement("button");
-sticker2.innerHTML = stickerType[1];
-sticker2.addEventListener("click", () => {
-  sSelected[1] = true;
-  canvas.dispatchEvent(new Event("tool-moved")), false;
-});
-const sticker3 = document.createElement("button");
-sticker3.innerHTML = stickerType[2];
-sticker3.addEventListener("click", () => {
-  sSelected[2] = true;
-  canvas.dispatchEvent(new Event("tool-moved")), false;
-});
-
-// Canvas
-const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-canvas.width = 256;
-canvas.height = 256;
-const ctx = canvas.getContext("2d")!;
-ctx.fillStyle = "white";
-ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
 
 function clearCanvas() {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
@@ -352,9 +375,9 @@ row2.appendChild(redoButton);
 row3.appendChild(thinButton);
 row3.appendChild(thickButton);
 row3.appendChild(brushSize);
-row4.appendChild(sticker1);
-row4.appendChild(sticker2);
-row4.appendChild(sticker3);
+// buttons.forEach((b) => {
+//   row4.appendChild(b);
+// });
 board.appendChild(row1);
 board.appendChild(row2);
 board.appendChild(row3);
