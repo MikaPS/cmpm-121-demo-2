@@ -75,44 +75,30 @@ class StickerCommand {
     this.y = y;
   }
 }
-// Add buttons
-// const buttons: HTMLButtonElement[] = [];
-const actualStickers: StickerCommand[] = []; // [stick1, stick2, stick3];
-
-// stickerCount = 0;
+// Adding stickers and buttons
+const actualStickers: StickerCommand[] = [];
 availableStickers.forEach((obj, i) => {
-  // Buttons
+  customSticker(obj.value, i);
+});
+
+function customSticker(text: string, i: number) {
   const button = document.createElement("button");
   button.addEventListener("click", () => {
-    if (obj.value == "custom") {
-      const text = prompt("Custom sticker text", "🧽")!;
-      customSticker(text);
+    if (text == "custom") {
+      const t = prompt("Custom sticker text", "🧽")!;
+      availableStickers.push({ value: t });
+      customSticker(t, availableStickers.length - 1);
       return;
     }
     sSelected[i] = true;
   });
-  button.innerHTML = obj.value;
-  row4.appendChild(button);
-
-  // Stickers
-  const stick = new StickerCommand(begPoint, begPoint, obj.value);
-  actualStickers.push(stick);
-  canvas.dispatchEvent(new Event("tool-moved")), false;
-});
-
-// Custom sticker
-function customSticker(text: string) {
-  availableStickers.push({ value: text });
-  const button = document.createElement("button");
-  button.addEventListener("click", () => {
-    sSelected[availableStickers.length - 1] = true;
-    canvas.dispatchEvent(new Event("tool-moved")), false;
-  });
   button.innerHTML = text;
-  app.append(button);
+  row4.append(button);
   const stick = new StickerCommand(begPoint, begPoint, text);
   actualStickers.push(stick);
+  canvas.dispatchEvent(new Event("tool-moved")), false;
 }
+
 // Step 6: I took it a step further and made even more options for marker sizes. I believe it's the same logic as requested on the slides.
 class BrushSizeCommand {
   brushSize: number;
@@ -140,7 +126,6 @@ class BrushSizeCommand {
   }
 }
 // Undo or Redo based on the values of l1 and l2
-// let sOnScreen = [false, false, false];
 function undoRedo(
   l1: (MarkerCommand | StickerCommand)[],
   l2: (MarkerCommand | StickerCommand)[],
