@@ -18,6 +18,7 @@ const row2 = document.createElement("div");
 const row3 = document.createElement("div");
 const row4 = document.createElement("div");
 const row5 = document.createElement("div");
+const row6 = document.createElement("div");
 
 // Canvas
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -26,6 +27,32 @@ canvas.height = 256;
 const ctx = canvas.getContext("2d")!;
 ctx.fillStyle = "white";
 ctx.fillRect(begPoint, begPoint, canvas.width, canvas.height);
+
+// Step 12
+let color = `rgba(0,0,0,1)`;
+const rangeRed = document.getElementById("rangeRed") as HTMLInputElement;
+const rangeRedVal = document.getElementById("rangeRedVal")!;
+
+rangeRed.addEventListener("input", function () {
+  rangeRedVal.textContent = this.value;
+  color = `rgba(${rangeRedVal.textContent}, ${rangeGreenVal.textContent}, ${rangeBlueVal.textContent}, 1)`;
+});
+
+const rangeGreen = document.getElementById("rangeGreen") as HTMLInputElement;
+const rangeGreenVal = document.getElementById("rangeGreenVal")!;
+
+rangeGreen.addEventListener("input", function () {
+  rangeGreenVal.textContent = this.value;
+  color = `rgba(${rangeRedVal.textContent}, ${rangeGreenVal.textContent}, ${rangeBlueVal.textContent}, 1)`;
+});
+
+const rangeBlue = document.getElementById("rangeBlue") as HTMLInputElement;
+const rangeBlueVal = document.getElementById("rangeBlueVal")!;
+
+rangeBlue.addEventListener("input", function () {
+  rangeBlueVal.textContent = this.value;
+  color = `rgba(${rangeRedVal.textContent}, ${rangeGreenVal.textContent}, ${rangeBlueVal.textContent}, 1)`;
+});
 
 // Step 9
 interface Sticker {
@@ -62,9 +89,9 @@ class StickerCommand {
   }
   draw(ctx: CanvasRenderingContext2D) {
     if (!this.onScreen) {
-      ctx.fillStyle = "rgba(255, 0, 0, 0)";
+      ctx.fillStyle = "rgba(${rangeValue}, 0, 0, 0)";
     } else {
-      ctx.fillStyle = "rgba(255, 0, 0, 1)";
+      ctx.fillStyle = color;
     }
     ctx.font = scale + scale + "px Times New Roman";
     ctx.fillText(this.sticker, this.x - scale - scale, this.y);
@@ -131,11 +158,14 @@ function undoRedo(
   l1: (MarkerCommand | StickerCommand)[],
   l2: (MarkerCommand | StickerCommand)[],
   l3: number[],
-  l4: number[]
+  l4: number[],
+  color1: string[],
+  color2: string[]
 ) {
   if (l1.length) {
     l2.push(l1.pop()!);
     l4.push(l3.pop()!);
+    color2.push(color1.pop()!);
     canvas.dispatchEvent(new Event("drawing-changed"));
   }
 }
@@ -152,7 +182,15 @@ undoButton.addEventListener("click", () => {
   if (save instanceof StickerCommand) {
     save.onScreen = false;
   }
-  undoRedo(undoList, redoList, undoBrushList, redoBrushList), false;
+  undoRedo(
+    undoList,
+    redoList,
+    undoBrushList,
+    redoBrushList,
+    undoColorList,
+    redoColorList
+  ),
+    false;
 });
 // Redo button
 const redoButton = document.createElement("button");
@@ -162,7 +200,15 @@ redoButton.addEventListener("click", () => {
   if (save instanceof StickerCommand) {
     save.onScreen = true;
   }
-  undoRedo(redoList, undoList, redoBrushList, undoBrushList), false;
+  undoRedo(
+    redoList,
+    undoList,
+    redoBrushList,
+    undoBrushList,
+    redoColorList,
+    undoColorList
+  ),
+    false;
 });
 
 // step 10
@@ -179,7 +225,7 @@ exportButton.addEventListener("click", () => {
   undoList.forEach((m) => {
     ctx2.resetTransform();
     ctx2.scale(scaleUp, scaleUp);
-    m.draw(ctx2, undoBrushList[count]);
+    m.draw(ctx2, undoBrushList[count], undoColorList[count]);
     count++;
   });
   canvasExport.dispatchEvent(new Event("drawing-changed"));
@@ -219,6 +265,9 @@ function clearCanvas() {
   brush.resetBrush();
   undoBrushList = [];
   redoBrushList = [];
+  undoColorList = [];
+  redoColorList = [];
+
   for (let i = begPoint; i < actualStickers.length; i++) {
     actualStickers[i].onScreen = false;
   }
@@ -236,8 +285,9 @@ class ToolCommand {
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.font = (brush.brushSize * scale).toString() + "px Times New Roman";
-    ctx.fillStyle = "blue";
+    // ctx.fillStyle = "blue";
     if (!isDrawing) {
+      ctx.fillStyle = color;
       ctx.fillText(".", this.x - scale - brush.brushSize, this.y);
     }
   }
@@ -256,7 +306,7 @@ class MarkerCommand {
     this.currentLine.push({ x, y });
   }
   // Changes drawing
-  draw(ctx: CanvasRenderingContext2D, brushSize: number) {
+  draw(ctx: CanvasRenderingContext2D, brushSize: number, colorList: string) {
     // Go through all the points in the line and make a path between them
     ctx.lineWidth = brushSize;
     ctx.beginPath();
@@ -264,6 +314,8 @@ class MarkerCommand {
     for (const p of this.currentLine) {
       ctx.lineTo(p.x, p.y);
     }
+    ctx.strokeStyle = colorList;
+    // console.log(colorList);
     ctx.stroke();
   }
 }
@@ -273,6 +325,8 @@ let redoList: (MarkerCommand | StickerCommand)[] = [];
 let marker: MarkerCommand = new MarkerCommand();
 let undoBrushList: number[] = [];
 let redoBrushList: number[] = [];
+let undoColorList: string[] = [];
+let redoColorList: string[] = [];
 let isDrawing = false;
 // let s1Placed = false;
 let isOutOfScreen = true;
@@ -280,8 +334,13 @@ canvas.addEventListener("drawing-changed", () => {
   ctx.clearRect(begPoint, begPoint, canvas.width, canvas.height);
   // Go through all the lines and draw them
   let count = begPoint;
+  // console.log(undoColorList);
   undoList.forEach((m) => {
-    m.draw(canvas.getContext("2d")!, undoBrushList[count]);
+    m.draw(
+      canvas.getContext("2d")!,
+      undoBrushList[count],
+      undoColorList[count]
+    );
     count++;
   });
 });
@@ -344,6 +403,7 @@ canvas.addEventListener("mousedown", (e) => {
       check = true;
       undoList.push(actualStickers[i]);
       undoBrushList.push(brush.brushSize);
+      undoColorList.push(color);
       break;
     }
   }
@@ -353,6 +413,8 @@ canvas.addEventListener("mousedown", (e) => {
     marker = new MarkerCommand(e.offsetX, e.offsetY);
     undoList.push(marker);
     undoBrushList.push(brush.brushSize);
+    // console.log("current color: ", color);
+    undoColorList.push(color);
   }
   canvas.dispatchEvent(new Event("tool-moved"));
 });
@@ -396,6 +458,15 @@ board.appendChild(row5);
 app.append(header);
 app.append(board);
 app.appendChild(exportButton);
+
+row6.appendChild(rangeRed);
+row6.appendChild(rangeRedVal);
+row6.appendChild(rangeGreen);
+row6.appendChild(rangeGreenVal);
+row6.appendChild(rangeBlue);
+row6.appendChild(rangeBlueVal);
+
+app.appendChild(row6);
 
 /*
 Credits:

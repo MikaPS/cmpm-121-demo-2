@@ -65,6 +65,33 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Style the range input */
+/* input[type="range"] {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 15px;
+  background: #d3d3d3;
+  border: none;
+  outline: none;
+} */
+
+/* Customize the thumb (slider button) */
+input[type="range"]::-webkit-slider-thumb {
+  /* -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px; */
+  background: #e221b8;
+  /* cursor: pointer; */
+}
+
+/* Display the selected value */
+/* #rangeValue {
+  text-align: center;
+  font-size: 20px;
+} */
+
 @media (prefers-color-scheme: dark) {
   :root {
     color: #b5b5b5;
