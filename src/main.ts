@@ -117,6 +117,7 @@ function customSticker(text: string, i: number) {
       customSticker(t, availableStickers.length - 1);
       return;
     }
+    sSelected.fill(false);
     sSelected[i] = true;
     stick.onScreen = true;
   });
@@ -144,6 +145,7 @@ class BrushSizeCommand {
     } else {
       this.brushSize++;
     }
+    sSelected.fill(false);
     brushSize.innerHTML = "Brush Size: " + this.brushSize;
   }
 
@@ -280,7 +282,11 @@ class ToolCommand {
   draw(ctx: CanvasRenderingContext2D) {
     ctx.font = (brush.brushSize * scale).toString() + "px Times New Roman";
     if (!isDrawing) {
-      ctx.fillStyle = color;
+      if (isOutOfScreen) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0)";
+      } else {
+        ctx.fillStyle = color;
+      }
       ctx.fillText(".", this.x - scale - brush.brushSize, this.y);
     }
   }
@@ -308,7 +314,6 @@ class MarkerCommand {
       ctx.lineTo(p.x, p.y);
     }
     ctx.strokeStyle = colorList;
-    // console.log(colorList);
     ctx.stroke();
   }
 }
@@ -340,13 +345,19 @@ canvas.addEventListener("drawing-changed", () => {
 
 canvas.addEventListener("tool-moved", () => {
   // If off screen, remove tool indicator, if on screen, update size
+  let isTool = true;
   if (!isOutOfScreen) {
-    tool.draw(canvas.getContext("2d")!);
     for (let i = begPoint; i < sSelected.length; i++) {
+      if (actualStickers[i].onScreen) {
+        isTool = false;
+      }
       actualStickers[i].draw(canvas.getContext("2d")!);
     }
   } else {
     canvas.dispatchEvent(new Event("drawing-changed"));
+  }
+  if (isTool) {
+    tool.draw(canvas.getContext("2d")!);
   }
 });
 
@@ -355,7 +366,11 @@ canvas.addEventListener("mouseenter", (e) => {
   let check = false;
   for (let i = begPoint; i < sSelected.length; i++) {
     if (sSelected[i]) {
-      actualStickers[i].drag(e.offsetX, e.offsetY);
+      actualStickers[i] = new StickerCommand(
+        e.offsetX,
+        e.offsetY,
+        availableStickers[i].value
+      ); //.drag(e.offsetX, e.offsetY);
       check = true;
     }
   }
@@ -367,6 +382,11 @@ canvas.addEventListener("mouseenter", (e) => {
 
 canvas.addEventListener("mouseout", () => {
   isOutOfScreen = true;
+  for (let i = begPoint; i < sSelected.length; i++) {
+    sSelected[i] = false;
+    actualStickers[i].onScreen = false;
+  }
+  canvas.dispatchEvent(new Event("tool-moved"));
 });
 
 // Gets original coords and starts the drawing
@@ -388,9 +408,13 @@ canvas.addEventListener("mousedown", (e) => {
   }
   for (let i = begPoint; i < sSelected.length; i++) {
     if (sSelected[i] && !sPlaced[i]) {
-      actualStickers[i].drag(e.offsetX, e.offsetY);
+      actualStickers[i] = new StickerCommand(
+        e.offsetX,
+        e.offsetY,
+        availableStickers[i].value
+      ); //.drag(e.offsetX, e.offsetY);
       sPlaced[i] = true;
-      sSelected[i] = false;
+      // sSelected[i] = false;
       actualStickers[i].onScreen = true;
 
       check = true;
@@ -419,8 +443,13 @@ canvas.addEventListener("mousemove", (e) => {
   let check = false;
   for (let i = begPoint; i < sSelected.length; i++) {
     if (sSelected[i]) {
-      actualStickers[i].drag(e.offsetX, e.offsetY);
+      actualStickers[i] = new StickerCommand(
+        e.offsetX,
+        e.offsetY,
+        availableStickers[i].value
+      ); //.drag(e.offsetX, e.offsetY);
       sPlaced[i] = false;
+      sSelected[i] = true;
       check = true;
     }
   }
